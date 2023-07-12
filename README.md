@@ -1,1 +1,1 @@
-# Gov-POC-MSGraphApi-Teamss
+# Gov-POC-MSGraphApi-Teams
