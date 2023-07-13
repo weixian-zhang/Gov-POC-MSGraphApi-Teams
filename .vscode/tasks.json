@@ -1,0 +1,33 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker build token manager",
+            "type": "shell",
+            "command": "docker build -t acrdstateams.azurecr.io/tokenmanager:v0.0.1 .",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            },
+            "dependsOn": ["pip freeze token manager"]
+        },
+        {
+            "label": "pip freeze token manager",
+            "type": "shell",
+            "command": ".venv/Scripts/Activate.ps1; pip freeze > requirements.txt",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            }
+        },
+        {
+            "label": "docker push token manager",
+            "type": "shell",
+            "command": "docker push acrdstateams.azurecr.io/tokenmanager:v0.0.1",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            },
+            "dependsOn": ["docker build token manager"]
+        },
+    ]
+}
