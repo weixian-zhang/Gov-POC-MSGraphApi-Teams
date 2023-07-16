@@ -2,11 +2,12 @@ import azure.functions as func
 import logging
 from azure.identity import UsernamePasswordCredential
 import os
-from loguru import logger
+import logging
 import json
 import requests
+from requests_toolbelt.utils import dump
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 scope = 'https://graph.microsoft.com/.default'
 graph_tenantid = os.getenv("graph_tenantid")
@@ -14,7 +15,7 @@ graph_clientid = os.getenv("graph_clientid")
 graph_username = os.getenv("graph_username")
 graph_password = os.getenv("graph_password")
 
-@app.route(route="teams/channel/send")
+@app.route(route="teams/channel/send", methods=["POST"])
 @app.function_name("TeamsChannelSend")
 def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
     
@@ -22,11 +23,16 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
         
         if "X-FORWARDED-FOR" in req.headers:
             source_ip = req.headers["X-FORWARDED-FOR"].split(':')[0]
-            logger.info(f'client {source_ip} requesting AAD access token for MS Graph API for Teams')
+            logging.info(f'client {source_ip} requesting AAD access token for MS Graph API for Teams')
         else:
-            logger.info(f'client requesting AAD access token for MS Graph API for Teams')
+            logging.info(f'client requesting AAD access token for MS Graph API for Teams')
         
-        body = json.loads(req.get_body())
+        byteBody = req.get_body()
+        
+        if byteBody == b'':
+            return func.HttpResponse('No message found', status_code=400) 
+        
+        body = json.loads(byteBody)
         
         if 'message' not in body:
             return func.HttpResponse('No message found') 
@@ -37,17 +43,19 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
         
         if 'mapping' in body:
             mapping = body['mapping']
-            for teamId, channelId in mapping:
+            for item in mapping:
+                teamId = item['teamId']
+                channelId = item['channelId']
                 teamsUrl = f'https://graph.microsoft.com/v1.0/teams/{teamId}/channels/{channelId}/messages'
                 http_call(teamsUrl, token, message)
         
-        logger.info(f'token successfully aquired')
+        logging.info(f'token successfully aquired')
         
-        return func.HttpResponse(token.token)
+        return func.HttpResponse('', status_code=200)
     
     except Exception as e:
-        logger.error(f'error: {e}')
-        return func.HttpResponse(f"internal server error {str(e)}")
+        logging.error(f'error: {e}')
+        return func.HttpResponse(f"internal server error {str(e)}", status_code=500)
 
 def get_bearer_token() -> str:
     cred = UsernamePasswordCredential(
@@ -58,17 +66,21 @@ def get_bearer_token() -> str:
     
     token = cred.get_token(scope)  
     
-    return token
+    return token.token
     
 def http_call(url, token, message):
     data = message
-    headers = {"Authorization": f"Bearer {token}"}
-    logger.info(requests.post(url, data=data, headers=headers).json())
-        
-    # if name:
-    #     return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    # else:
-    #     return func.HttpResponse(
-    #          "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-    #          status_code=200
-    #     )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "body": {
+            "content": message
+        }
+    }
+
+
+    response = requests.post(url, data=json.dumps(body), headers=headers)
+    data = dump.dump_all(response)
+    logging.info(data.decode('utf-8'))
