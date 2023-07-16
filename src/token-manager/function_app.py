@@ -7,13 +7,18 @@ import json
 import requests
 from requests_toolbelt.utils import dump
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 scope = 'https://graph.microsoft.com/.default'
 graph_tenantid = os.getenv("graph_tenantid")
 graph_clientid = os.getenv("graph_clientid")
 graph_username = os.getenv("graph_username")
 graph_password = os.getenv("graph_password")
+
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.route(route="teams/channel/send", methods=["POST"])
 @app.function_name("TeamsChannelSend")
@@ -27,27 +32,26 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
         else:
             logging.info(f'client requesting AAD access token for MS Graph API for Teams')
         
-        byteBody = req.get_body()
+        bodyStr = req.get_body().decode("utf-8") 
         
-        if byteBody == b'':
-            return func.HttpResponse('No message found', status_code=400) 
+        logging.info(f'received request with body: {bodyStr}')
         
-        body = json.loads(byteBody)
-        
-        if 'message' not in body:
-            return func.HttpResponse('No message found') 
+        if not is_message_valid(bodyStr):
+            return func.HttpResponse('request does not contain valid message', status_code=400) 
+
+        bodyDict = json.loads(bodyStr)
         
         token = get_bearer_token()
         
-        message = body['message']
+        message = bodyDict['message']
         
-        if 'mapping' in body:
-            mapping = body['mapping']
-            for item in mapping:
-                teamId = item['teamId']
-                channelId = item['channelId']
-                teamsUrl = f'https://graph.microsoft.com/v1.0/teams/{teamId}/channels/{channelId}/messages'
-                http_call(teamsUrl, token, message)
+        mapping = bodyDict['mapping']
+        for item in mapping:
+            teamId = item['teamId']
+            channelId = item['channelId']
+            teamsUrl = f'https://graph.microsoft.com/v1.0/teams/{teamId}/channels/{channelId}/messages'
+            http_call(teamsUrl, token, message)
+            
         
         logging.info(f'token successfully aquired')
         
@@ -56,6 +60,15 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f'error: {e}')
         return func.HttpResponse(f"internal server error {str(e)}", status_code=500)
+
+
+def is_message_valid(body: str):
+    bodyJson = json.loads(body)
+    
+    if bodyJson == '' or 'message' not in bodyJson or 'mapping' not in bodyJson:
+        return False
+    
+    return True
 
 def get_bearer_token() -> str:
     cred = UsernamePasswordCredential(
