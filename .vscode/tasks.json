@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "docker build -t acrdstateams.azurecr.io/tokenmanager:v0.0.1 .",
             "options": {
-                "cwd": "${workspaceFolder}/src/token-manager"
+                "cwd": "${workspaceFolder}/src/func-teams-channel-send"
             }
         },
         {
@@ -16,7 +16,7 @@
             "type": "shell",
             "command": ".venv/Scripts/Activate.ps1; pip freeze > requirements.txt",
             "options": {
-                "cwd": "${workspaceFolder}/src/token-manager"
+                "cwd": "${workspaceFolder}/src/func-teams-channel-send"
             }
         },
         {
@@ -24,7 +24,7 @@
             "type": "shell",
             "command": "docker push acrdstateams.azurecr.io/tokenmanager:v0.0.1",
             "options": {
-                "cwd": "${workspaceFolder}/src/token-manager"
+                "cwd": "${workspaceFolder}/src/func-teams-channel-send"
             },
             "dependsOn": [
                 "docker build token manager"
@@ -38,7 +38,7 @@
             "isBackground": true,
             "dependsOn": "pip install (functions)",
             "options": {
-                "cwd": "${workspaceFolder}/src\\token-manager"
+                "cwd": "${workspaceFolder}/src\\func-teams-channel-send"
             }
         },
         {
@@ -55,7 +55,7 @@
             },
             "problemMatcher": [],
             "options": {
-                "cwd": "${workspaceFolder}/src\\token-manager"
+                "cwd": "${workspaceFolder}/src\\func-teams-channel-send"
             }
         }
     ]
