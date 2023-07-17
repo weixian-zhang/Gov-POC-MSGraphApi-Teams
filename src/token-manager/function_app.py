@@ -6,6 +6,8 @@ import logging
 import json
 import requests
 from requests_toolbelt.utils import dump
+import traceback
+import yaml
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -39,31 +41,41 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
         if not is_message_valid(bodyStr):
             return func.HttpResponse('request does not contain valid message', status_code=400) 
 
-        bodyDict = json.loads(bodyStr)
+        bodyDict = json.loads(bodyStr, strict=False)
         
         token = get_bearer_token()
         
         message = bodyDict['message']
         
-        mapping = bodyDict['mapping']
+        yamlStr = bodyDict['mapping']
+        
+        try:
+            mapping = yaml.safe_load(yamlStr)
+        except Exception as e:
+            logging.info(f'error parsing yaml teams-channcel-id-mapping: {str(e)}')
+            return func.HttpResponse(f"error parsing yaml teams-channcel-id-mapping: {str(e)}", status_code=400)
+        
+        mapping = mapping['mapping']
         for item in mapping:
             teamId = item['teamId']
             channelId = item['channelId']
             teamsUrl = f'https://graph.microsoft.com/v1.0/teams/{teamId}/channels/{channelId}/messages'
             http_call(teamsUrl, token, message)
+            logging.info(f'message sent to channel {teamsUrl}')
             
         
-        logging.info(f'token successfully aquired')
+        logging.info(f'message successfully sent to {len(mapping)} Teams channel(s)')
         
         return func.HttpResponse('', status_code=200)
     
     except Exception as e:
-        logging.error(f'error: {e}')
-        return func.HttpResponse(f"internal server error {str(e)}", status_code=500)
+        stacktraces = get_stacktrace()
+        logging.error(f'error: {str(e)}, stacktrace: {stacktraces}')
+        return func.HttpResponse(f"internal server error {stacktraces}", status_code=500)
 
 
 def is_message_valid(body: str):
-    bodyJson = json.loads(body)
+    bodyJson = json.loads(body, strict=False)
     
     if bodyJson == '' or 'message' not in bodyJson or 'mapping' not in bodyJson:
         return False
@@ -97,3 +109,9 @@ def http_call(url, token, message):
     response = requests.post(url, data=json.dumps(body), headers=headers)
     data = dump.dump_all(response)
     logging.info(data.decode('utf-8'))
+    
+def get_stacktrace() -> str:
+    stacktraces = []
+    for line in traceback.format_stack():
+        stacktraces.append(line.strip())
+        return ''.join(stacktraces)

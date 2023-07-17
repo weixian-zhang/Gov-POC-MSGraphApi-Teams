@@ -1,17 +1,4 @@
 {
     "message": "hello world func",
-    "mapping": [
-        {
-            "teamId": "3e92fc16-3260-4797-90a3-41321ac1a96e",
-            "channelId": "19%3ad4817deb89814ec790fd6971f83bf9b8%40thread.tacv2"
-        },
-        {
-             "teamId": "24df2116-6984-4239-829e-a8b67744e4fc",
-             "channelId": "19%3axRJXEinF1jE1cvMnfNNAT9LwRHOadY2K5K4-DWh8NwI1%40thread.tacv2"
-        },
-        {
-             "teamId": "adf1490a-1c53-4d34-9cf7-daf84a45baa8",
-             "channelId": "19%3a-sqjwZ-dBo8kNSEqqRW7TmpiqJLmdkMHEYiodKy33Ro1%40thread.tacv2"
-        }
-     ]
+    "mapping": "mapping:  - teamId: 3e92fc16-3260-4797-90a3-41321ac1a96e    channelId=19%3ad4817deb89814ec790fd6971f83bf9b8%40thread.tacv2  - teamId: 24df2116-6984-4239-829e-a8b67744e4fc    channelId: 19%3axRJXEinF1jE1cvMnfNNAT9LwRHOadY2K5K4-DWh8NwI1%40thread.tacv2  - teamId: adf1490a-1c53-4d34-9cf7-daf84a45baa8     channelId: 19%3a-sqjwZ-dBo8kNSEqqRW7TmpiqJLmdkMHEYiodKy33Ro1%40thread.tacv2"
 }
