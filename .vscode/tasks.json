@@ -1,0 +1,62 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker build token manager",
+            "type": "shell",
+            "command": "docker build -t acrdstateams.azurecr.io/tokenmanager:v0.0.1 .",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            }
+        },
+        {
+            "label": "pip freeze token manager",
+            "type": "shell",
+            "command": ".venv/Scripts/Activate.ps1; pip freeze > requirements.txt",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            }
+        },
+        {
+            "label": "docker push token manager",
+            "type": "shell",
+            "command": "docker push acrdstateams.azurecr.io/tokenmanager:v0.0.1",
+            "options": {
+                "cwd": "${workspaceFolder}/src/token-manager"
+            },
+            "dependsOn": [
+                "docker build token manager"
+            ]
+        },
+        {
+            "type": "func",
+            "label": "func: host start",
+            "command": "host start",
+            "problemMatcher": "$func-python-watch",
+            "isBackground": true,
+            "dependsOn": "pip install (functions)",
+            "options": {
+                "cwd": "${workspaceFolder}/src\\token-manager"
+            }
+        },
+        {
+            "label": "pip install (functions)",
+            "type": "shell",
+            "osx": {
+                "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
+            },
+            "windows": {
+                "command": "${config:azureFunctions.pythonVenv}\\Scripts\\python -m pip install -r requirements.txt"
+            },
+            "linux": {
+                "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}/src\\token-manager"
+            }
+        }
+    ]
+}
