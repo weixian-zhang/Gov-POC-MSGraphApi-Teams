@@ -43,8 +43,6 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
 
         bodyDict = json.loads(bodyStr, strict=False)
         
-        token = get_bearer_token()
-        
         message = bodyDict['message']
         
         yamlStr = bodyDict['mapping']
@@ -54,6 +52,8 @@ def get_graph_teams_token(req: func.HttpRequest) -> func.HttpResponse:
         except Exception as e:
             logging.info(f'error parsing yaml teams-channcel-id-mapping: {str(e)}')
             return func.HttpResponse(f"error parsing yaml teams-channcel-id-mapping: {str(e)}", status_code=400)
+        
+        token = get_bearer_token()
         
         mapping = mapping['mapping']
         for item in mapping:
